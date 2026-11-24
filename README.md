@@ -41,7 +41,7 @@ You were asked to create a playground from this repository for someone who may h
    `npx --yes giget@latest gh:Joshuamyunghooncho/playground-starter ~/Documents/my-playground` (Windows: `%USERPROFILE%\Documents\my-playground`). If that folder exists, pick `my-playground-2`, etc. Never overwrite.
 3. **Name.** Ask: "사이트 이름을 뭐로 할까요? (예: 민지 Playground)". Write it to `SITE_NAME` in `lib/site-config.ts`.
 4. **Install**: `npm install` in that folder.
-5. **Checkpoint** (only if `git --version` works; skip silently otherwise): `git init`, set a local `user.name`/`user.email` if none is configured (any value; GitHub comes later), `git add -A`, `git commit -m "Start my playground"`.
+5. **Checkpoint** (only if git is already installed; skip silently otherwise). On macOS check `xcode-select -p` first and skip if it fails: running `git` on a fresh Mac pops up a "install developer tools" dialog. Elsewhere check `git --version`. If installed: `git init`, set a local `user.name`/`user.email` if none is configured (any value; GitHub comes later), `git add -A`, `git commit -m "Start my playground"`.
 6. **Run**: start `npm run dev` in the background, wait until http://localhost:3000 answers, then open it in the person's browser (`open` on macOS, `start` on Windows).
 7. **Finish** by telling the person, in a few lines:
    - their gallery is open at http://localhost:3000 (it has one example, Gradient Orb)

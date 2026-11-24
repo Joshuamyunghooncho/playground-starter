@@ -71,7 +71,7 @@ Never build a "new prototype" button, form, or API inside the app. Prototypes ar
 5. **Verify** in a browser at ~375px and desktop widths, in light and dark mode (see "Verify before you finish").
 6. **Thumbnails**: `npm run thumbnails -- <slug>`. Open both images and look at them. (First time: `npx playwright install chromium`. If that fails, skip thumbnails; the gallery shows "No preview yet".)
 7. **Check**: `npm run check`. Fix everything; no warnings left behind in your files.
-8. **Save a checkpoint** if git is available: `git add -A && git commit -m "Add <Title> prototype"`.
+8. **Save a checkpoint** if git is available (on macOS only when `xcode-select -p` succeeds; otherwise `git` opens an install dialog): `git add -A && git commit -m "Add <Title> prototype"`.
 9. **Show it**: give the local link `http://localhost:3000/prototypes/<slug>`. Deploy only when the owner asks (see Deploying).
 
 Editing an existing prototype is the same loop minus scaffolding: bump `updatedAt`, update `HOW_IT_WORKS.md`, recapture thumbnails if anything visual changed.
@@ -240,7 +240,7 @@ return (
 
 - Work locally. Keep `npm run dev` running so the owner sees every change at http://localhost:3000 right away.
 - Before finishing, run `npm run check` (lint, type-check, production build). All must pass.
-- If git is available, commit a checkpoint after each finished change, so mistakes can be undone. Never force anything that loses the owner's work.
+- If git is available, commit a checkpoint after each finished change, so mistakes can be undone. On macOS check `xcode-select -p` before calling `git`: on a Mac without developer tools, any `git` command pops up an install dialog. If the owner wants git, they can accept that dialog. Never force anything that loses the owner's work.
 - End every task with the link to what changed: local `http://localhost:3000/prototypes/<slug>`, plus `<PRODUCTION_URL>/prototypes/<slug>` once it has been deployed.
 - **When something goes wrong and gets fixed, add the lesson to "Lessons learned" below**, so it never happens again. This file should grow.
 
