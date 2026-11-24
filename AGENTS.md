@@ -19,7 +19,7 @@ This repo is one Next.js app holding many small, self-contained prototypes. The 
 - `next-themes`: dark by default, system preference available, toggle in the tool shell's toolbar.
 - **Tool shell** (`components/playground/tool/`): every prototype's UI, adapted from [Toolcraft](https://github.com/pixel-point/toolcraft) (MIT, Pixel Point) via the creative-reference-engine skill's shell. Control schema + state in `components/playground/controls/`; `AnimateHeight`, `AnimatedList` and the gallery theme toggle in `components/playground/`.
 - Site name and production URL live in `lib/site-config.ts`.
-- Hosting: Vercel, deployed from this folder with the Vercel CLI (`npx vercel`). No GitHub needed. See **Deploying**.
+- Code lives in the owner's private GitHub repo (`origin`), set up during setup. Hosting: Vercel, deployed from this folder with the Vercel CLI (`npx vercel`). See **Deploying**.
 
 ```
 app/
@@ -71,7 +71,7 @@ Never build a "new prototype" button, form, or API inside the app. Prototypes ar
 5. **Verify** in a browser at ~375px and desktop widths, in light and dark mode (see "Verify before you finish").
 6. **Thumbnails**: `npm run thumbnails -- <slug>`. Open both images and look at them. (First time: `npx playwright install chromium`. If that fails, skip thumbnails; the gallery shows "No preview yet".)
 7. **Check**: `npm run check`. Fix everything; no warnings left behind in your files.
-8. **Save a checkpoint** if git is available (on macOS only when `xcode-select -p` succeeds; otherwise `git` opens an install dialog): `git add -A && git commit -m "Add <Title> prototype"`.
+8. **Save**: `git add -A && git commit -m "Add <Title> prototype" && git push`.
 9. **Show it**: give the local link `http://localhost:3000/prototypes/<slug>`. Deploy only when the owner asks (see Deploying).
 
 Editing an existing prototype is the same loop minus scaffolding: bump `updatedAt`, update `HOW_IT_WORKS.md`, recapture thumbnails if anything visual changed.
@@ -240,7 +240,8 @@ return (
 
 - Work locally. Keep `npm run dev` running so the owner sees every change at http://localhost:3000 right away.
 - Before finishing, run `npm run check` (lint, type-check, production build). All must pass.
-- If git is available, commit a checkpoint after each finished change, so mistakes can be undone. On macOS check `xcode-select -p` before calling `git`: on a Mac without developer tools, any `git` command pops up an install dialog. If the owner wants git, they can accept that dialog. Never force anything that loses the owner's work.
+- After each finished change: commit and `git push` to `origin` (the owner's GitHub), so nothing is lost and mistakes can be undone ("되돌려줘" → revert the last commit(s) with `git revert`, never a force-push). Work on `main`; no branches or pull requests unless the owner asks.
+- No `origin` yet (GitHub skipped during setup)? Commit locally and offer "GitHub 연결해줘" once; the steps are in README.md → setup steps 6–10. On macOS check `xcode-select -p` before calling `git` (without developer tools any `git` command pops up an install dialog). Never force anything that loses the owner's work.
 - End every task with the link to what changed: local `http://localhost:3000/prototypes/<slug>`, plus `<PRODUCTION_URL>/prototypes/<slug>` once it has been deployed.
 - **When something goes wrong and gets fixed, add the lesson to "Lessons learned" below**, so it never happens again. This file should grow.
 
@@ -252,11 +253,11 @@ Vercel CLI, straight from this folder. Free Hobby plan is enough. Run every comm
 2. **Log in** (first time only): run `npx vercel login` in the background. It prints a link (and maybe a code); show it to the owner, ask them to open it and sign up / log in with their email, then wait for the command to finish. `npx vercel whoami` confirms it.
 3. **Link the project** (first time only): `npx vercel link --yes` (creates a Vercel project named after the folder).
 4. **Set the password** (first time, or when the owner wants a new one): `printf '%s' "<password>" | npx vercel env add SITE_PASSWORD production`. To change it later: `npx vercel env rm SITE_PASSWORD production --yes` first.
-5. **Deploy**: `npm run check`, then `npx vercel deploy --prod --yes`. Share the **production domain** (`https://<project>.vercel.app`, the "Aliased" line, or from `npx vercel project ls`), not the long per-deployment URL: Vercel's Deployment Protection puts its own login on those.
+5. **Deploy**: `npm run check`, commit and push, then `npx vercel deploy --prod --yes`. Share the **production domain** (`https://<project>.vercel.app`, the "Aliased" line, or from `npx vercel project ls`), not the long per-deployment URL: Vercel's Deployment Protection puts its own login on those.
 6. First deploy: write the production domain into `PRODUCTION_URL` in `lib/site-config.ts` and commit.
 7. Tell the owner the link and that it asks for the password they chose. Later deploys are just step 5.
 
-"GitHub에도 올려줘" (optional, later): install `gh` if missing, `gh auth login`, `gh repo create <name> --private --source . --push`. Before the first commit pushed to GitHub, set `git config user.email` to the GitHub noreply address (`gh api user --jq '"\(.id)+\(.login)@users.noreply.github.com"'`), or Vercel's Git integration blocks those deploys.
+If `npx vercel link` offers to connect the GitHub repo, accept: pushes to `main` then also deploy automatically. Commits must be authored with the GitHub noreply address set during setup (`git config user.email`), or Vercel blocks those deploys.
 
 ### Verify before you finish
 - Open the prototype in a browser at 375px and ≥1280px, in light and dark mode.
