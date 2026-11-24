@@ -1,0 +1,14 @@
+{
+  "title": "Gradient Orb",
+  "description": "A WebGL dome-and-arch gradient orb with image aura, halftone/glyph textures, presets and PNG export.",
+  "tags": [
+    "webgl",
+    "shader",
+    "generative",
+    "tool"
+  ],
+  "createdAt": "2026-11-23",
+  "updatedAt": "2026-11-24T13:05:50.000Z",
+  "hidden": false,
+  "public": false
+}
