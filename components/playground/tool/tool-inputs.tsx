@@ -62,7 +62,7 @@ export function ToolSelect({
           aria-label={label}
           className={cn(
             inputClass,
-            "h-7 w-full justify-between gap-1.5 rounded-[8px] px-2 text-[12px] font-medium shadow-none data-[state=open]:border-foreground/20 dark:bg-foreground/5 dark:hover:bg-foreground/5 [&_svg]:size-3.5"
+            "h-7 w-full justify-between gap-1.5 rounded-[8px] px-2 text-[12px] font-medium shadow-none max-md:h-11 max-md:text-[14px] data-[state=open]:border-foreground/20 dark:bg-foreground/5 dark:hover:bg-foreground/5 [&_svg]:size-3.5"
           )}
         >
           <SelectValue />
@@ -76,7 +76,7 @@ export function ToolSelect({
             <SelectItem
               key={o.value}
               value={o.value}
-              className="min-h-7 rounded-[6px] px-2 text-[12px] font-medium tracking-[-0.01em] focus:bg-foreground/5 max-md:min-h-11"
+              className="min-h-7 rounded-[6px] px-2 text-[12px] font-medium tracking-[-0.01em] focus:bg-foreground/5 max-md:min-h-11 max-md:text-[14px]"
             >
               {o.label}
             </SelectItem>
@@ -184,7 +184,7 @@ export function ToolSwitch({ label, checked, onChange }: { label: string; checke
           )}
         />
       </span>
-      <span className="truncate text-xs leading-4 font-medium text-foreground/60">{label}</span>
+      <span className="truncate text-xs leading-4 font-medium text-foreground/60 max-md:text-[13px]">{label}</span>
     </button>
   )
 }

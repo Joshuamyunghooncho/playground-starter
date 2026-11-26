@@ -15,7 +15,10 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck && npm run build",
     "new": "tsx scripts/new-prototype.ts",
-    "thumbnails": "tsx scripts/capture-thumbnails.ts"
+    "thumbnails": "tsx scripts/capture-thumbnails.ts",
+    "verify": "tsx scripts/verify.ts",
+    "ship": "tsx scripts/ship.ts",
+    "deploy:setup": "tsx scripts/deploy-setup.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

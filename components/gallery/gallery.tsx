@@ -46,7 +46,7 @@ export function Gallery({ entries }: { entries: PrototypeEntry[] }) {
               type="button"
               aria-pressed={tags.includes(t)}
               onClick={() => toggleTag(t)}
-              className="h-7 rounded-[6px] border border-foreground/12 bg-foreground/5 px-2 font-medium text-foreground/72 transition-colors duration-150 outline-none hover:text-foreground focus-visible:border-foreground/40 aria-pressed:bg-tool-link/12 aria-pressed:text-foreground max-md:h-11 max-md:px-3"
+              className="h-7 rounded-[6px] border border-foreground/12 bg-foreground/5 px-2 font-medium text-foreground/72 transition-colors duration-150 outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground aria-pressed:hover:text-primary-foreground max-md:h-11 max-md:px-3"
             >
               {t}
             </button>

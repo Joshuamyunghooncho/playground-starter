@@ -20,3 +20,5 @@ export {
 } from "./tool-primitives"
 export { formatToolValue, ToolNumberField, ToolSlider, ToolValueBox } from "./tool-slider"
 export { ToolChoice, ToolColor, ToolSegmented, ToolSelect, ToolSwitch } from "./tool-inputs"
+export { MotionCanvas, type DrawFrame, type MotionSize } from "./motion-canvas"
+export { MotionExportButtons, useMotionExport } from "./motion-export"

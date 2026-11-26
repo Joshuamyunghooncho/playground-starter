@@ -27,7 +27,7 @@ function useClockTime(clock: ToolClock) {
 }
 
 /**
- * Floating playback bar above the stage: play/pause, frame steps and a
+ * Floating playback bar above the stage (desktop): play/pause, frame steps and a
  * scrubber (loops only). Open-ended animations show play/pause and elapsed time.
  */
 export function ToolTimeline({ clock, scrub }: { clock: ToolClock; scrub: boolean }) {
@@ -41,8 +41,8 @@ export function ToolTimeline({ clock, scrub }: { clock: ToolClock; scrub: boolea
       data-playground-chrome
       className={cn(
         surfaceClass,
-        "fixed top-2.5 left-[calc((100vw-310px)/2)] z-40 flex -translate-x-1/2 items-center gap-1.5 overflow-hidden p-1 select-none max-md:left-1/2",
-        canScrub && "w-[min(420px,calc(100vw-350px))] max-md:w-[calc(100vw-16px)]"
+        "fixed top-2.5 left-[calc((100vw-310px)/2)] z-40 flex -translate-x-1/2 items-center gap-1.5 overflow-hidden p-1 select-none max-md:hidden",
+        canScrub && "w-[min(420px,calc(100vw-350px))]"
       )}
     >
       <ToolIconButton onClick={clock.togglePlaying} aria-label={playing ? "일시정지 (Space)" : "재생 (Space)"} title={playing ? "일시정지 (Space)" : "재생 (Space)"}>
@@ -74,6 +74,38 @@ export function ToolTimeline({ clock, scrub }: { clock: ToolClock; scrub: boolea
       )}
       <span className="px-2 whitespace-nowrap text-muted-foreground tabular-nums">{label}</span>
       {canScrub && <i className="absolute bottom-0 left-0 block h-px bg-tool-link/90" style={{ width: `${(t / d) * 100}%` }} />}
+    </div>
+  )
+}
+
+/** The same playback as a row in the phone sheet; the scrubber gets the width frame steps would take. */
+export function ToolPlayback({ clock, scrub }: { clock: ToolClock; scrub: boolean }) {
+  const playing = useClockPlaying(clock)
+  const { t, d } = useClockTime(clock)
+  const canScrub = scrub && d > 0
+  const label = canScrub ? `${t.toFixed(1)} / ${d.toFixed(1)}s` : `${t.toFixed(1)}s`
+
+  return (
+    <div className="flex h-11 shrink-0 items-center gap-2 pr-4 pl-1 md:hidden">
+      <ToolIconButton onClick={clock.togglePlaying} aria-label={playing ? "일시정지" : "재생"} className="text-foreground [&_svg]:size-[18px]">
+        {playing ? <Pause className="fill-current" /> : <Play className="fill-current" />}
+      </ToolIconButton>
+      {canScrub && (
+        <ToolSlider
+          label="시간"
+          className="flex-1"
+          value={t}
+          min={0}
+          max={d}
+          step={0.001}
+          valueText={label}
+          onChange={(v) => {
+            clock.setPlaying(false)
+            clock.seek(v)
+          }}
+        />
+      )}
+      <span className="text-[13px] whitespace-nowrap text-muted-foreground tabular-nums">{label}</span>
     </div>
   )
 }

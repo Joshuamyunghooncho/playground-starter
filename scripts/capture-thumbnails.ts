@@ -112,6 +112,7 @@ async function openSettled(ctx: BrowserContext, url: string) {
   const page = await ctx.newPage()
   const res = await page.goto(url, { waitUntil: "networkidle" })
   if (!res || res.status() >= 400) throw new Error(`${url} returned ${res?.status()}`)
+  await page.locator("[data-prototype-loading]").waitFor({ state: "detached", timeout: 120_000 })
   // Hide the tool shell's chrome and let the subject use the whole frame.
   await page.addStyleTag({
     content: "[data-playground-chrome], nextjs-portal { display: none !important; } [data-tool-stage] { padding: 24px !important; }",
@@ -170,7 +171,8 @@ async function main() {
       detached: true,
     })
     await waitForServer(`${base}/login`)
-    browser = await chromium.launch()
+    // Full Chromium in new headless mode: the default headless shell has no WebGPU adapter.
+    browser = await chromium.launch({ channel: "chromium", args: ["--enable-unsafe-webgpu"] })
 
     for (const proto of targets) {
       for (const theme of ["light", "dark"] as const) {

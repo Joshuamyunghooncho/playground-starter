@@ -16,24 +16,26 @@ function Tag({ children }: { children: string }) {
 export function PrototypeCard({ entry }: { entry: PrototypeEntry }) {
   const { slug, metadata: m, assets } = entry
   return (
-    <Link
-      href={`/prototypes/${slug}`}
-      className={cn(
-        surfaceClass,
-        "group flex h-full flex-col overflow-hidden transition-colors duration-150 outline-none hover:border-foreground/20 focus-visible:border-foreground/40 active:border-foreground/30"
-      )}
-    >
-      <div className="overflow-hidden border-b border-foreground/8">
-        <Thumbnail assets={assets} title={m.title} />
-      </div>
-      <div className="flex flex-col gap-1 px-3 pt-2.5 pb-3">
-        <div className="flex min-w-0 items-center gap-2">
-          <h2 className="truncate text-[13px] leading-[18px] font-medium">{m.title}</h2>
-          {m.public && <Tag>Public</Tag>}
-          {m.hidden && <Tag>Hidden</Tag>}
+    <article className={cn(
+      surfaceClass,
+      "flex h-full flex-col overflow-hidden transition-colors duration-150 hover:border-foreground/20 focus-within:border-foreground/40"
+    )}>
+      <Link
+        href={`/prototypes/${slug}`}
+        className="group flex flex-1 flex-col outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+      >
+        <div className="overflow-hidden border-b border-foreground/8">
+          <Thumbnail assets={assets} title={m.title} />
         </div>
-        {m.description && <p className="line-clamp-2 text-foreground/60">{m.description}</p>}
-      </div>
-    </Link>
+        <div className="flex flex-col gap-1 px-3 pt-2.5 pb-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate text-[13px] leading-[18px] font-medium">{m.title}</h2>
+            {m.public && <Tag>Public</Tag>}
+            {m.hidden && <Tag>Hidden</Tag>}
+          </div>
+          {m.description && <p className="line-clamp-2 text-foreground/60">{m.description}</p>}
+        </div>
+      </Link>
+    </article>
   )
 }

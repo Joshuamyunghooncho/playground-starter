@@ -3,20 +3,24 @@
 // Full-window tool layout adapted from Toolcraft (MIT, Pixel Point —
 // https://github.com/pixel-point/toolcraft) via the creative-reference-engine
 // skill's shell: dot-grid stage with pan/zoom, timeline on top, floating
-// control panel on the right, toolbar at the bottom.
+// control panel on the right, toolbar at the bottom. On phones: a top bar, and
+// a bottom sheet with the playback row, section tabs and controls.
 
 import { usePathname } from "next/navigation"
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react"
 
 import { readStorage, writeStorage } from "@/lib/storage"
 import { cn } from "@/lib/utils"
 import type { ToolClock } from "./clock"
 import { toolFont } from "./tool-font"
+import { SNAP_DVH, type SheetSnap } from "./panel-tabs"
+import { ToolSettingsButton, ToolTopBar } from "./tool-mobile"
 import { ToolPanel } from "./tool-panel"
 import { SectionMemoryContext, type SectionMemory } from "./tool-primitives"
 import { ToolStage, zoomView, type StageView } from "./tool-stage"
-import { ToolTimeline } from "./tool-timeline"
+import { ToolPlayback, ToolTimeline } from "./tool-timeline"
 import { ToolToolbar } from "./tool-toolbar"
+import { StageFillContext } from "./use-fit-size"
 
 type History = { undo: () => void; redo: () => void; canUndo: boolean; canRedo: boolean }
 
@@ -41,6 +45,14 @@ type Props = {
   canvasInput?: boolean
   /** The subject: fills the free stage area (size canvases to their parent). */
   children: ReactNode
+}
+
+const PHONE = "(max-width: 767px)"
+const isPhone = () => window.matchMedia(PHONE).matches
+function subscribePhone(onChange: () => void) {
+  const query = window.matchMedia(PHONE)
+  query.addEventListener("change", onChange)
+  return () => query.removeEventListener("change", onChange)
 }
 
 const isTyping = (el: Element | null) =>
@@ -70,6 +82,10 @@ function useSectionMemory(slug: string): SectionMemory {
 
 export function ToolShell({ title, slug, panel, footer, clock, scrub = true, history, onRandomize, onReset, canvasInput, children }: Props) {
   const [view, setView] = useState<StageView>({ k: 1, x: 0, y: 0 })
+  const [snap, setSnap] = useState<SheetSnap>(0)
+  const [fill, setFill] = useState(true)
+  const phone = useSyncExternalStore(subscribePhone, isPhone, () => false)
+  const moved = view.k !== 1 || view.x !== 0 || view.y !== 0
   const sections = useSectionMemory(slug)
   const showBack = !usePathname().startsWith("/p/")
 
@@ -103,12 +119,37 @@ export function ToolShell({ title, slug, panel, footer, clock, scrub = true, his
 
   return (
     <SectionMemoryContext.Provider value={sections}>
-      <div className={cn(toolFont.className, "text-[12px] leading-[1.625] text-foreground")}>
+      <div
+        className={cn(toolFont.className, "text-[12px] leading-[1.625] text-foreground")}
+        style={
+          {
+            // Phone sheet: fixed rows (handle, playback, tabs) and the controls' height.
+            "--tool-sheet-base": snap === 0 ? "0px" : `calc(${24 + (clock ? 44 : 0) + 45}px + env(safe-area-inset-bottom))`,
+            "--tool-sheet-body": `${SNAP_DVH[snap]}dvh`,
+          } as CSSProperties
+        }
+      >
+        <ToolTopBar title={title} showBack={showBack} history={history} onRandomize={onRandomize}
+          filled={fill && !moved}
+          onFit={() => {
+            setView({ k: 1, x: 0, y: 0 })
+            if (!moved) setFill(!fill)
+          }}
+        />
         <ToolStage view={view} onViewChange={setView} canvasInput={canvasInput} hasTimeline={Boolean(clock)}>
-          {children}
+          <StageFillContext.Provider value={phone && fill && snap === 0}>{children}</StageFillContext.Provider>
         </ToolStage>
+        <ToolSettingsButton hidden={snap > 0} onClick={() => setSnap(1)} />
         {clock && <ToolTimeline clock={clock} scrub={scrub} />}
-        <ToolPanel title={title} onRandomize={onRandomize} onReset={onReset} footer={footer}>
+        <ToolPanel
+          title={title}
+          onRandomize={onRandomize}
+          onReset={onReset}
+          footer={footer}
+          snap={snap}
+          onSnap={setSnap}
+          playback={clock && <ToolPlayback clock={clock} scrub={scrub} />}
+        >
           {panel}
         </ToolPanel>
         <ToolToolbar

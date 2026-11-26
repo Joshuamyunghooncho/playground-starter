@@ -20,7 +20,7 @@ type Props = {
 
 const Divider = () => <span className="h-5 w-px shrink-0 bg-foreground/8" />
 
-/** Floating bar under the stage: back, undo/redo, zoom, theme, centre. */
+/** Floating bar under the stage (desktop): back, undo/redo, zoom, theme, centre. */
 export function ToolToolbar({ showBack, zoom, onZoomIn, onZoomOut, onZoomReset, onCenter, history }: Props) {
   const { resolvedTheme, setTheme } = useTheme()
 
@@ -29,8 +29,7 @@ export function ToolToolbar({ showBack, zoom, onZoomIn, onZoomOut, onZoomReset, 
       data-playground-chrome
       className={cn(
         surfaceClass,
-        "fixed bottom-2.5 left-[calc((100vw-310px)/2)] z-40 flex -translate-x-1/2 items-center gap-1.5 p-1 select-none",
-        "max-md:bottom-[calc(46dvh+6px)] max-md:left-1/2 max-md:gap-0.5"
+        "fixed bottom-2.5 left-[calc((100vw-310px)/2)] z-40 flex -translate-x-1/2 items-center gap-1.5 p-1 select-none max-md:hidden"
       )}
     >
       {showBack && (
@@ -54,18 +53,18 @@ export function ToolToolbar({ showBack, zoom, onZoomIn, onZoomOut, onZoomReset, 
           <Divider />
         </>
       )}
-      <ToolIconButton onClick={onZoomOut} aria-label="축소" title="축소" className="max-md:hidden">
+      <ToolIconButton onClick={onZoomOut} aria-label="축소" title="축소">
         <ZoomOut />
       </ToolIconButton>
       <button
         type="button"
         onClick={onZoomReset}
         title="100%로"
-        className="box-content w-[4ch] border-0 bg-transparent p-0 text-center font-mono text-[12px] text-foreground/90 tabular-nums outline-none max-md:h-11 max-md:px-1"
+        className="box-content w-[4ch] border-0 bg-transparent p-0 text-center font-mono text-[12px] text-foreground/90 tabular-nums outline-none"
       >
         {Math.round(zoom * 100)}%
       </button>
-      <ToolIconButton onClick={onZoomIn} aria-label="확대" title="확대" className="max-md:hidden">
+      <ToolIconButton onClick={onZoomIn} aria-label="확대" title="확대">
         <ZoomIn />
       </ToolIconButton>
       <Divider />

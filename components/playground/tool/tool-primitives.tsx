@@ -7,9 +7,10 @@
 
 import { ChevronUp, RotateCcw } from "lucide-react"
 import { Slot } from "radix-ui"
-import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react"
 
 import { cn } from "@/lib/utils"
+import { PanelTabsContext } from "./panel-tabs"
 
 /** Translucent floating surface used by the panel, timeline and toolbar. */
 export const surfaceClass =
@@ -78,7 +79,7 @@ export function ToolTextarea({ className, ...props }: ComponentProps<"textarea">
 export function ToolLabel({ className, ...props }: ComponentProps<"label">) {
   return (
     <label
-      className={cn("truncate text-xs leading-4 font-medium whitespace-nowrap text-foreground/60", className)}
+      className={cn("truncate text-xs leading-4 font-medium whitespace-nowrap text-foreground/60 max-md:text-[13px]", className)}
       {...props}
     />
   )
@@ -121,7 +122,7 @@ export function ToolPair({ children }: { children: ReactNode }) {
 
 /** Vertical stack of controls with the panel's standard spacing. */
 export function ToolList({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("flex flex-col gap-3.5 px-3 pt-2 pb-6", className)}>{children}</div>
+  return <div className={cn("flex flex-col gap-3.5 px-3 pt-2 pb-6 max-md:px-4 max-md:pt-3", className)}>{children}</div>
 }
 
 /** Remembers which sections are open, per tool (provided by `ToolShell`). */
@@ -145,9 +146,13 @@ type SectionProps = {
   children: ReactNode
 }
 
-/** Collapsible panel section with an uppercase title, like the original tool. */
+/** Collapsible panel section with an uppercase title, like the original tool. On phones: one tab of the sheet. */
 export function ToolSection({ title, id = title, defaultOpen = true, open: openProp, onOpenChange, onReset, changed, children }: SectionProps) {
   const memory = useContext(SectionMemoryContext)
+  const tabs = useContext(PanelTabsContext)
+  const ref = useRef<HTMLElement>(null)
+  const register = tabs?.register
+  useEffect(() => (ref.current ? register?.({ id, title, el: ref.current }) : undefined), [register, id, title])
   const [openState, setOpenState] = useState(defaultOpen)
   const open = openProp ?? memory?.isOpen(id) ?? openState
   const toggle = () => {
@@ -157,9 +162,9 @@ export function ToolSection({ title, id = title, defaultOpen = true, open: openP
   }
 
   return (
-    <section className="border-t border-foreground/8 first:border-t-0">
+    <section ref={ref} className={cn("border-t border-foreground/8 first:border-t-0 max-md:border-t-0", tabs && tabs.active !== id && "max-md:hidden")}>
       <div
-        className="flex h-9 cursor-pointer items-center justify-between gap-2 pr-1.5 pl-3 transition-colors duration-150 select-none hover:bg-foreground/3 max-md:h-12"
+        className="flex h-9 cursor-pointer items-center justify-between gap-2 pr-1.5 pl-3 transition-colors duration-150 select-none hover:bg-foreground/3 max-md:hidden"
         onClick={toggle}
       >
         <h3 className="truncate text-[11px] leading-[11px] font-semibold text-foreground/75 uppercase">{title}</h3>
@@ -195,11 +200,18 @@ export function ToolSection({ title, id = title, defaultOpen = true, open: openP
       <div
         className={cn(
           "grid transition-[grid-template-rows] duration-[240ms] ease-smooth",
-          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr] max-md:grid-rows-[1fr]"
         )}
       >
-        <div className={cn("min-h-0 overflow-hidden transition-[visibility] duration-[240ms]", !open && "invisible")}>
-          <ToolList>{children}</ToolList>
+        <div className={cn("min-h-0 overflow-hidden transition-[visibility] duration-[240ms]", !open && "invisible max-md:visible")}>
+          <ToolList>
+            {children}
+            {onReset && (
+              <ToolButton className="md:hidden" disabled={!changed} onClick={onReset}>
+                <RotateCcw /> {title} 초기화
+              </ToolButton>
+            )}
+          </ToolList>
         </div>
       </div>
     </section>

@@ -19,7 +19,7 @@ This repo is one Next.js app holding many small, self-contained prototypes. The 
 - `next-themes`: dark by default, system preference available, toggle in the tool shell's toolbar.
 - **Tool shell** (`components/playground/tool/`): every prototype's UI, adapted from [Toolcraft](https://github.com/pixel-point/toolcraft) (MIT, Pixel Point) via the creative-reference-engine skill's shell. Control schema + state in `components/playground/controls/`; `AnimateHeight`, `AnimatedList` and the gallery theme toggle in `components/playground/`.
 - Site name and production URL live in `lib/site-config.ts`.
-- Code lives in the owner's private GitHub repo (`origin`), set up during setup. Hosting: Vercel, deployed from this folder with the Vercel CLI (`npx vercel`). See **Deploying**.
+- Code lives in the owner's private GitHub repo (`origin`), set up during setup. Hosting: Vercel, production only (no preview deployments, no pull requests). "배포해줘" / "올려줘" = `npm run ship`. See **Deploying**.
 
 ```
 app/
@@ -41,7 +41,7 @@ lib/storage.ts              safe namespaced localStorage
 proxy.ts                    password gate (Next 16 name for middleware)
 public/thumbnails/          <slug>-light.jpg, <slug>-dark.jpg
 public/og/                  <slug>.png, <slug>.mp4 (public prototypes only)
-scripts/                    registry generator, scaffolder, thumbnail capture
+scripts/                    registry generator, scaffolder, thumbnails, verify, ship, deploy setup
 ```
 
 ### Commands
@@ -49,11 +49,14 @@ scripts/                    registry generator, scaffolder, thumbnail capture
 | Command | What it does |
 |---|---|
 | `npm run dev` | Dev server (regenerates the registry first) |
-| `npm run new -- <slug> "Title" "Description"` | Scaffold a new prototype folder |
+| `npm run new -- <slug> "Title" "Description" [--motion]` | Scaffold a new prototype folder. `--motion`: a working loop with timeline, PNG and MP4 export |
+| `npm run verify -- <slug>` | Lint, type-check and a real-browser check (desktop dark, 375px light, console errors, Randomize, Reset, reload), plus both thumbnails. About 30 s |
+| `npm run ship -- <slug>` | "배포해줘" / "올려줘": commit, push to GitHub `main`, put it on the live site, print the link. Without a slug: ships work that is already committed |
+| `npm run deploy:setup` | Once, before the first deploy (after `npx vercel login`): link Vercel, connect GitHub, production only, no bot comments, 1-day retention |
 | `npm run thumbnails -- <slug> [<slug>...]` | Build, then capture light/dark thumbnails (+ OG for public ones) |
 | `npm run thumbnails -- --missing` / `--all` | Only prototypes without thumbnails / every prototype |
 | `npm run thumbnails -- <slug> --no-build` | Reuse the current `.next` build |
-| `npm run check` | Lint + type-check + production build. Must pass before finishing or deploying |
+| `npm run check` | Lint + type-check + production build. For shared code, dependencies or config; a single prototype uses `verify` |
 | `npm run registry` | Regenerate `lib/generated/*` (runs automatically before dev/build/lint/typecheck) |
 
 The thumbnail script needs Playwright's Chromium (`npx playwright install chromium`) and uses `ffmpeg` for the OG mp4 if available.
@@ -65,14 +68,12 @@ The thumbnail script needs Playwright's Chromium (`npx playwright install chromi
 Never build a "new prototype" button, form, or API inside the app. Prototypes are created only by agents, like this:
 
 1. **Dev server**: make sure `npm run dev` is running (start it in the background if not) and tell the owner to open http://localhost:3000.
-2. **Scaffold**: `npm run new -- <slug> "Title" "One sentence description"`. Slugs are kebab-case and become the URL `/prototypes/<slug>`. This creates `page.tsx`, `<slug>-app.tsx`, `types.ts`, `data.ts`, `metadata.json`, `HOW_IT_WORKS.md`.
+2. **Scaffold**: `npm run new -- <slug> "Title" "One sentence description"`, with `--motion` for anything that moves. Slugs are kebab-case and become the URL `/prototypes/<slug>`. This creates `page.tsx`, `<slug>-app.tsx`, `types.ts`, `data.ts`, `metadata.json`, `HOW_IT_WORKS.md`.
 3. **Build it** following every rule below. Run `npm run dev` and open `/prototypes/<slug>`.
 4. **Fill in `metadata.json`** (tags!) and **`HOW_IT_WORKS.md`** (every section).
-5. **Verify** in a browser at ~375px and desktop widths, in light and dark mode (see "Verify before you finish").
-6. **Thumbnails**: `npm run thumbnails -- <slug>`. Open both images and look at them. (First time: `npx playwright install chromium`. If that fails, skip thumbnails; the gallery shows "No preview yet".)
-7. **Check**: `npm run check`. Fix everything; no warnings left behind in your files.
-8. **Save**: `git add -A && git commit -m "Add <Title> prototype" && git push`.
-9. **Show it**: give the local link `http://localhost:3000/prototypes/<slug>`. Deploy only when the owner asks (see Deploying).
+5. **Verify**: stop the dev server first (Next allows one per folder), run `npm run verify -- <slug>` (add `--export` when it has PNG/MP4 buttons, `--still` when its default state rests), then start `npm run dev` again. **Open and look at** `.verify/<slug>-*.png` and both thumbnails. (First time: `npx playwright install chromium`.)
+6. **Save**: commit locally (`git add -A -- app/prototypes/<slug> public/thumbnails && git commit -m "Add <Title> prototype"`). Don't push: pushing is part of deploying.
+7. **Show it**: give the local link `http://localhost:3000/prototypes/<slug>`. Put it online only when the owner says "배포해줘" / "올려줘" (see Deploying).
 
 Editing an existing prototype is the same loop minus scaffolding: bump `updatedAt`, update `HOW_IT_WORKS.md`, recapture thumbnails if anything visual changed.
 
@@ -96,6 +97,7 @@ Every prototype has `app/prototypes/<slug>/metadata.json`:
 ```
 
 - **Bump `updatedAt` on every edit** (`date -u +%Y-%m-%dT%H:%M:%S.000Z`). The gallery sorts by it.
+- **Tags**: use the group names in `components/gallery/tag-groups.ts` (English, lowercase); every prototype needs at least one. Other tags are searchable but get no filter button. The gallery shows about 12 filters; don't add a group for a single prototype.
 - All seven fields are required; the registry generator fails the build on missing or mistyped fields.
 - `hidden: true` removes it from the gallery unless "Hidden" is toggled on. It stays reachable by URL.
 - `public` stays `false` unless the owner explicitly asks to make **that specific** prototype public. See Privacy.
@@ -138,7 +140,7 @@ Every prototype has a `HOW_IT_WORKS.md`, kept current on every change, with thes
 - Minimal interface copy. Cut captions that restate labels, helper text nobody needed, and marketing tone. No "Welcome to…" headers.
 
 ### Tool shell and control panel
-Every prototype renders inside `ToolShell`: a full-window dot-grid stage (drag/scroll to pan, ⌘+scroll or toolbar to zoom), a floating 300px control panel (top right; docked to the bottom half on phones), a timeline on top for animations, and a toolbar at the bottom (back to gallery, undo/redo, zoom, theme, centre). Tunable parameters (speed, color, size, count…) always go in the panel, never scattered inputs. You get the panel, persistence, Randomize, Reset and undo/redo for free:
+Every prototype renders inside `ToolShell`: a full-window dot-grid stage (drag/scroll to pan, ⌘+scroll or toolbar to zoom), a floating 300px control panel (top right; on phones a bottom sheet, see below), a timeline on top for animations, and a toolbar at the bottom (back to gallery, undo/redo, zoom, theme, centre). Tunable parameters (speed, color, size, count…) always go in the panel, never scattered inputs. You get the panel, persistence, Randomize, Reset and undo/redo for free:
 
 ```tsx
 // data.ts
@@ -166,6 +168,7 @@ return (
 )
 ```
 
+- **Phones** (below `md`): a top bar (← 목록, undo/redo, Randomize, fill/fit), the subject covers the screen (`useFitSize` does this, so always size with it; don't clamp a canvas with `max-w`/`max-h`), and one 설정 button opens the sheet: playback row, one tab per `ToolSection`, and a 저장 tab with the `footer`, Reset and theme. Keep section titles short: they are tab labels.
 - The panel header has **Randomize** (dice) and **Reset**; pass `onRandomize`/`onReset` that also cover state outside the schema. Mark controls that shouldn't be randomized with `randomize: false`.
 - Each `group: "Shape"` becomes a collapsible section with its own reset; `ToolControls closed={["Shape"]}` starts one collapsed. Open/closed choices are remembered per prototype.
 - Numbers render as label + typeable value + slider (double-click resets); ≤4 short options as segmented buttons, otherwise a dropdown; consecutive colours pair up in two columns.
@@ -175,6 +178,7 @@ return (
   - `controls.replace(partialValues)`: set many values at once (e.g. applying a preset). Undo covers schema values only.
 - Exports (PNG, MP4…) go in `footer`; the main one is `variant="primary"`. `saveCanvasPng` from `@/lib/download`.
 - **Animations**: create one `useToolClock({ start, duration })` and have the render loop call `clock.advance(dt)` for the time, `clock.setDuration(loopSeconds)` for loops, and redraw when `clock.playing || clock.consumeSeek() || dirty`. The timeline then plays, pauses, steps and scrubs it (Space, ←/→). If time isn't a pure function of `t` (speeds integrated over time) or the piece is pointer-driven, pass `scrub={false}`. It starts paused under reduced motion.
+- **Loops whose frames are a pure function of `t`** use the shared parts: `MotionCanvas` (preview), `useMotionExport` + `MotionExportButtons` (PNG and frame-exact MP4; `recordMp4` in `lib/mp4.ts`). Don't copy an `mp4.ts` into a prototype. `--motion` scaffolds all of it.
 - **Sizing**: the subject fills the stage area left free by the chrome. Give the canvas wrapper `size-full` and size the canvas with `useFitSize(wrapRef, aspect)`. No borders or rounded corners on the canvas.
 - Prototypes that take pointer input on their canvas pass `canvasInput` so dragging there doesn't pan the stage.
 - `app/prototypes/gradient-orb/` is the reference for all of this. Don't build your own shell.
@@ -239,37 +243,55 @@ return (
 ## Workflow
 
 - Work locally. Keep `npm run dev` running so the owner sees every change at http://localhost:3000 right away.
-- Before finishing, run `npm run check` (lint, type-check, production build). All must pass.
-- After each finished change: commit and `git push` to `origin` (the owner's GitHub), so nothing is lost and mistakes can be undone ("되돌려줘" → revert the last commit(s) with `git revert`, never a force-push). Work on `main`; no branches or pull requests unless the owner asks.
+- Before finishing a prototype, `npm run verify -- <slug>` must pass. Changes to shared code, dependencies or config also need `npm run check`: nothing else builds before the live site.
+- After each finished change: commit on `main`, so nothing is lost and mistakes can be undone ("되돌려줘" → `git revert` the last commit(s), never a force-push or reset; if it was already online, ship again). No branches or pull requests.
+- Push only through `npm run ship`: with Vercel connected to GitHub, every push to `main` is a deploy.
 - No `origin` yet (GitHub skipped during setup)? Commit locally and offer "GitHub 연결해줘" once; the steps are in README.md → setup steps 6–10. On macOS check `xcode-select -p` before calling `git` (without developer tools any `git` command pops up an install dialog). Never force anything that loses the owner's work.
 - End every task with the link to what changed: local `http://localhost:3000/prototypes/<slug>`, plus `<PRODUCTION_URL>/prototypes/<slug>` once it has been deployed.
 - **When something goes wrong and gets fixed, add the lesson to "Lessons learned" below**, so it never happens again. This file should grow.
 
-## Deploying (when the owner says "배포해줘" / "deploy")
+## Deploying (when the owner says "배포해줘" / "올려줘" / "deploy")
 
-Vercel CLI, straight from this folder. Free Hobby plan is enough. Run every command non-interactively and explain each browser step to the owner in plain words.
+Production only, on the free Hobby plan: no pull requests, no preview deployments, no Vercel bot comments (GitHub emails each one), deployments kept 1 day (otherwise the free storage fills up). `npm run deploy:setup` sets all of that through the Vercel CLI; never send the owner to the Vercel dashboard for it. Run every command non-interactively and explain each browser step in plain words.
 
-1. **Password**: the site is private behind `SITE_PASSWORD`. On the first deploy ask the owner for a password (the one visitors will type). Never write it into any file.
-2. **Log in** (first time only): run `npx vercel login` in the background. It prints a link (and maybe a code); show it to the owner, ask them to open it and sign up / log in with their email, then wait for the command to finish. `npx vercel whoami` confirms it.
-3. **Link the project** (first time only): `npx vercel link --yes` (creates a Vercel project named after the folder).
-4. **Set the password** (first time, or when the owner wants a new one): `printf '%s' "<password>" | npx vercel env add SITE_PASSWORD production`. To change it later: `npx vercel env rm SITE_PASSWORD production --yes` first.
-5. **Deploy**: `npm run check`, commit and push, then `npx vercel deploy --prod --yes`. Share the **production domain** (`https://<project>.vercel.app`, the "Aliased" line, or from `npx vercel project ls`), not the long per-deployment URL: Vercel's Deployment Protection puts its own login on those.
-6. First deploy: write the production domain into `PRODUCTION_URL` in `lib/site-config.ts` and commit.
-7. Tell the owner the link and that it asks for the password they chose. Later deploys are just step 5.
+**First time only**
+1. **Password**: the site is private behind `SITE_PASSWORD`. Ask the owner for a password (the one visitors will type). Never write it into any file or commit.
+2. **Log in**: run `npx vercel login` in the background. It prints a link (and maybe a code); show it, ask the owner to open it and sign up / log in (email or "Continue with GitHub"), then wait for it to finish. `npx vercel whoami` confirms it.
+3. **Set up**: `npm run deploy:setup`. It links this folder to a Vercel project and connects the GitHub repo (pushes to `main` then deploy). If connecting GitHub fails (the Vercel GitHub app isn't installed), that's fine: `ship` uploads from this folder instead. Say once that "Continue with GitHub" on vercel.com → Settings → Git can connect it later.
+4. **Set the password**: `printf '%s' "<password>" | npx vercel env add SITE_PASSWORD production`. To change it later: `npx vercel env rm SITE_PASSWORD production --yes` first, then ship again.
 
-If `npx vercel link` offers to connect the GitHub repo, accept: pushes to `main` then also deploy automatically. Commits must be authored with the GitHub noreply address set during setup (`git config user.email`), or Vercel blocks those deploys.
+**Every deploy**
+5. `npm run ship -- <slug>` (or `npm run ship` for already committed work). It commits, rebases onto `origin/main`, pushes, waits for Vercel (or uploads the committed files when GitHub isn't connected) and prints the live link. The first time it also writes `PRODUCTION_URL` into `lib/site-config.ts` and commits it.
+6. Tell the owner the link (`<PRODUCTION_URL>/prototypes/<slug>`) and that it asks for the password they chose. Share the short production domain, never a long per-deployment URL: Vercel's Deployment Protection puts its own login on those.
+
+A failed Vercel build keeps the previous version live: fix it and ship again.
 
 ### Verify before you finish
-- Open the prototype in a browser at 375px and ≥1280px, in light and dark mode.
-- Exercise every control, including Randomize and Reset, and reload to confirm persistence.
-- No console errors. No horizontal scroll at 375px.
-- Look at the thumbnails.
+`npm run verify` covers: opens at 1280px (dark) and 375px (light), no console errors, no horizontal scroll, animation and pause, Randomize, reload persistence, Reset, thumbnails. You still do what it can't:
+- Look at the screenshots and thumbnails. Is it the right picture?
+- Move each new control to both ends.
+- Custom UI outside the tool shell: check it at 375px and in both themes.
 
 ---
 
 ## Lessons learned
 
 Add an entry whenever something broke and was fixed. Newest first.
+
+- **Previews and bot comments overwhelmed a free Vercel account.** With a preview per push and 30-day retention, 230 deployments (7.8 GB) piled up in 3 days, and `vercel[bot]` comments on every pull request arrived as email. This starter deploys production only, without pull requests or comments, and keeps deployments 1 day (`npm run deploy:setup`). Don't open pull requests or re-enable previews.
+- **A shader hash on regular grid positions can return exactly 0,** so `step(hash, 0.)` hides a few particles even when the effect is off. Clamp it (`max(h, .002)`) and look at the frame where the amount is 0. Flakes that all change size together show the grid; give each its own threshold.
+- **Stop the existing dev server before running `verify`.** Next.js locks the development directory to one server even when the verification server uses another port.
+- **Never measure text on the canvas you are drawing on.** In Thermal Type a width helper resized the shared scratch canvas mid-draw, which cleared it: Hangul and uploaded fonts never melted, with no error. Test fallback characters, not only the default text.
+- **Thumbnails are taken about 5 s after the page opens.** A looping piece with an entrance and an exit can be caught closing; choose `START_TIME` and the loop length so that `START_TIME + 5` is inside the part worth seeing.
+- **Compare the subject, not the screen, to test motion.** An element screenshot includes whatever overlaps it, so the timeline's running clock made a frozen canvas pass "animation runs". `verify` hides the chrome while comparing. Break the thing on purpose once to see a new check fail.
+- **Canvas video needs a final captured frame.** MediaRecorder can end the file at the timestamp of the last drawn frame, shortening low-FPS recordings. Draw the loop-start frame at the end and verify decoded duration as well as file creation.
+- **MediaPipe logs an INFO line through `console.error`** when a model is created. Load models only when needed (not in the default state), or `verify` fails on console errors.
+- **Thumbnails of WebGPU prototypes need full Chromium.** Playwright's default headless shell has no GPU adapter, so the capture showed the "unsupported" message. `capture-thumbnails.ts` launches `channel: "chromium"` with `--enable-unsafe-webgpu`. WebGPU types come from `@webgpu/types` via a `/// <reference>` in the renderer file.
+- **Don't name a helper `layout.ts` inside a prototype folder.** `layout`, `page`, `loading`, `error`, `template`, `default` and `route` are Next file conventions; a pure-logic `layout.ts` is treated as a route layout and fails the type check. Use a specific name such as `word-layout.ts`.
+- **Control schema values are readonly.** For a randomized partial update built incrementally, use a mutable mapped type before passing the result to `controls.replace`.
+- **Paused type animations need a visible reset frame.** When reduced motion pauses a timeline, resetting words or image mode must draw a visible held frame rather than the blank lead-in; check the reduced-motion page after asynchronous source updates.
+- **Webpack fallback builds omit Tailwind styling.** This project configures Tailwind through the Turbopack loader in `next.config.ts`; `next build --webpack` can compile but its CSS is incomplete. Do not capture thumbnails from that build. If local Turbopack cannot bind its helper port, verify layout and capture thumbnails from `next dev`, then confirm the Vercel Turbopack deployment.
+- **Vercel blocks deploys whose commit author isn't a GitHub account.** The first deploy failed with "couldn't find a Git account for the commit author" because commits were authored with the Mac's default local address. Setup sets the GitHub noreply address (README step 9); in a new environment check `git config user.email` and set it the same way. A blocked deploy shows as `BLOCKED` in Vercel, not as a failed build.
 
 - **Porting a skill-made tool must keep its UI.** Tools from the creative-reference-engine skill ship with a Toolcraft-style shell; porting them into a generic shadcn panel loses that design. The playground now *is* that shell (`ToolShell`): port only the engine/renderer and map its params to `defineControls`, keeping groups, order and export buttons. Map skill features: `params[].group` → `group`, timeline/`duration` → `useToolClock` + `setDuration`, `canvasInput` → `canvasInput`, export buttons → `footer`.
 - **Changing `app/prototypes/layout.tsx` may need a dev-server restart.** After the header was removed, Turbopack kept serving the old layout until `npm run dev` was restarted.

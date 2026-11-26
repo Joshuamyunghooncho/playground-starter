@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils"
 import { ToolField } from "./tool-primitives"
 
 const THUMB = 9
+/** Sideways px before a touch counts as dragging the slider. */
+const TOUCH_SLOP = 5
 
 function decimalsOf(step: number) {
   return step < 1 ? Math.min(3, (String(step).split(".")[1] ?? "").length || 2) : 0
@@ -40,6 +42,8 @@ type SliderProps = {
 
 export function ToolSlider({ value, min, max, step = (max - min) / 100, onChange, defaultValue, label, valueText, className }: SliderProps) {
   const [dragging, setDragging] = useState(false)
+  // Touch: where the finger landed, and the value the drag started from once it moves sideways.
+  const touch = useRef<{ x: number; from: number | null } | null>(null)
   const f = (value - min) / (max - min || 1)
   const ticks = Math.round((max - min) / step)
 
@@ -70,9 +74,14 @@ export function ToolSlider({ value, min, max, step = (max - min) / 100, onChange
       aria-valuenow={value}
       aria-valuetext={valueText}
       data-dragging={dragging || undefined}
-      className={cn("group/slider relative h-[18px] cursor-pointer touch-none outline-none max-md:h-11", className)}
+      className={cn("group/slider relative h-[18px] cursor-pointer touch-pan-y outline-none max-md:h-11", className)}
       onPointerDown={(e) => {
         if (e.button) return
+        // A finger may be scrolling the panel: wait for a sideways drag or a tap.
+        if (e.pointerType === "touch") {
+          touch.current = { x: e.clientX, from: null }
+          return
+        }
         e.preventDefault()
         e.currentTarget.focus()
         e.currentTarget.setPointerCapture(e.pointerId)
@@ -80,10 +89,27 @@ export function ToolSlider({ value, min, max, step = (max - min) / 100, onChange
         fromPointer(e)
       }}
       onPointerMove={(e) => {
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) fromPointer(e)
+        const finger = touch.current
+        if (finger) {
+          if (finger.from === null) {
+            if (Math.abs(e.clientX - finger.x) < TOUCH_SLOP) return
+            touch.current = { x: e.clientX, from: value }
+            setDragging(true)
+            return
+          }
+          const width = Math.max(1, e.currentTarget.clientWidth - THUMB)
+          onChange(snapTo(finger.from + ((e.clientX - finger.x) / width) * (max - min), min, max, step))
+        } else if (dragging && e.currentTarget.hasPointerCapture(e.pointerId)) fromPointer(e)
       }}
-      onPointerUp={() => setDragging(false)}
-      onPointerCancel={() => setDragging(false)}
+      onPointerUp={(e) => {
+        if (touch.current?.from === null) fromPointer(e)
+        touch.current = null
+        setDragging(false)
+      }}
+      onPointerCancel={() => {
+        touch.current = null
+        setDragging(false)
+      }}
       onDoubleClick={() => defaultValue !== undefined && onChange(defaultValue)}
       onKeyDown={onKeyDown}
     >
@@ -99,7 +125,7 @@ export function ToolSlider({ value, min, max, step = (max - min) / 100, onChange
           />
         ))}
       <i
-        className="absolute top-1/2 -mt-[4.5px] -ml-[4.5px] block size-[9px] rounded-[2px] bg-foreground transition-[scale,box-shadow] duration-200 ease-out group-hover/slider:scale-140 group-focus-visible/slider:ring-[3px] group-focus-visible/slider:ring-foreground/20 group-data-dragging/slider:scale-140"
+        className="absolute top-1/2 -mt-[4.5px] -ml-[4.5px] block size-[9px] rounded-[2px] bg-foreground transition-[scale,box-shadow] duration-200 ease-out group-hover/slider:scale-140 group-focus-visible/slider:ring-[3px] group-focus-visible/slider:ring-foreground/20 group-data-dragging/slider:scale-140 max-md:scale-160 max-md:group-hover/slider:scale-160 max-md:group-data-dragging/slider:scale-200"
         style={{ left: pos(f) }}
       />
     </div>
@@ -156,7 +182,7 @@ export function ToolValueBox({
         }
       }}
       className={cn(
-        "-mr-1 h-5 w-[9ch] cursor-text rounded-[4px] border-0 bg-transparent px-1 text-right leading-5 text-muted-foreground tabular-nums outline-none hover:text-foreground focus:bg-foreground/8 focus:text-foreground",
+        "-mr-1 h-5 w-[9ch] cursor-text rounded-[4px] border-0 bg-transparent px-1 text-right leading-5 text-muted-foreground tabular-nums outline-none hover:text-foreground focus:bg-foreground/8 focus:text-foreground max-md:-my-3 max-md:h-11",
         className
       )}
     />

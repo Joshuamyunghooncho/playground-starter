@@ -45,3 +45,6 @@ next-env.d.ts
 
 # playwright scratch output
 /.thumbnail-tmp/
+
+# npm run verify screenshots
+/.verify/

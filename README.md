@@ -24,7 +24,7 @@ Claude가 사이트 이름을 물어보면 답하세요. 설치가 끝나면 브
 |---|---|
 | "마우스를 따라 번지는 물감 효과 만들어줘" | 새 프로토타입이 만들어지고 브라우저에 바로 보여요 |
 | "슬라이더 하나 더 추가해줘", "색을 더 밝게" | 보면서 계속 고칠 수 있어요 |
-| "배포해줘" | 인터넷 주소가 생겨요. 처음 한 번만 Vercel 가입/로그인(이메일)과 비밀번호 정하기가 있어요 |
+| "배포해줘" / "올려줘" | GitHub에 저장되고 인터넷 주소에 바로 올라가요. 처음 한 번만 Vercel 가입/로그인(이메일)과 비밀번호 정하기가 있어요 |
 | "되돌려줘" | 저장해 둔 이전 상태로 돌아가요 (GitHub에 이력이 남아 있어요) |
 
 다음에 다시 작업할 때는 터미널에서 플레이그라운드 폴더로 가서 `claude`를 실행하거나, Claude 앱에서 그 폴더를 열면 돼요.
@@ -60,17 +60,19 @@ You were asked to create a playground from this repository for someone who may h
 
 If a GitHub step fails or the person wants to skip it, finish without it (the playground works locally) and say they can say "GitHub 연결해줘" any time; AGENTS.md has the same steps.
 
-From then on, follow `AGENTS.md` in the project folder: it covers creating prototypes, the design system, and deploying with the Vercel CLI.
+From then on, follow `AGENTS.md` in the project folder: it covers creating prototypes, the design system, and deploying (`npm run deploy:setup` once, then `npm run ship`: production only, no pull requests or preview deployments).
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `npm run dev` | Local dev server at http://localhost:3000 (no password locally) |
-| `npm run new -- <slug> "Title" "Description"` | Scaffold a new prototype |
+| `npm run new -- <slug> "Title" "Description" [--motion]` | Scaffold a new prototype (`--motion`: animated loop with PNG/MP4 export) |
+| `npm run verify -- <slug>` | Check a prototype in a real browser and capture its thumbnails |
 | `npm run thumbnails -- <slug>` | Capture gallery thumbnails (needs `npx playwright install chromium` once) |
 | `npm run check` | Lint + type-check + production build |
-| `npx vercel deploy --prod --yes` | Deploy (see AGENTS.md → Deploying) |
+| `npm run deploy:setup` | First deploy only: link Vercel with quiet, production-only settings |
+| `npm run ship -- <slug>` | Deploy: push to GitHub and put it online (see AGENTS.md → Deploying) |
 
 ## License
 
