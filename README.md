@@ -8,11 +8,7 @@
 
 ## 시작하기
 
-Claude Code를 열고 아래 문장을 그대로 붙여넣으세요.
-
-```text
-https://github.com/Joshuamyunghooncho/playground-starter 로 내 플레이그라운드 만들어줘
-```
+Claude Code(Claude 앱의 Code 탭)를 열고 **[PROMPT.md](PROMPT.md)의 시작 프롬프트**를 통째로 복사해서 붙여넣으세요.
 
 Claude가 사이트 이름을 물어보면 답하세요. 설치가 끝나면 브라우저에 내 갤러리가 열려요.
 

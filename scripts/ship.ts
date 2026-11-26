@@ -14,7 +14,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 
-import { gitConnected, linked, project, productionUrl } from "./vercel"
+import { api, gitConnected, linked, project, productionUrl } from "./vercel"
 import { fingerprint, out, prototypePaths, readMetadata, root, run, sleep, stampFile } from "./workflow"
 
 const TIMEOUT_MS = 10 * 60_000
@@ -74,6 +74,11 @@ async function main() {
   const link = linked()
   if (!link) throw new Error("Not set up for Vercel yet. Run `npx vercel login`, then `npm run deploy:setup`.")
   if (!out("git", ["branch", "--show-current"])) throw new Error("Check out a branch first (detached HEAD).")
+  // The site must never go online without its password (without one it stays locked to everyone).
+  const { envs } = api<{ envs: { key: string; target?: string[] }[] }>(link, `/v9/projects/${link.projectId}/env`)
+  if (!envs.some((e) => e.key === "SITE_PASSWORD" && e.target?.includes("production"))) {
+    throw new Error("No site password yet. Ask the owner for one, then: printf '%s' \"<password>\" | npx vercel env add SITE_PASSWORD production")
+  }
 
   let remote = false
   try {
