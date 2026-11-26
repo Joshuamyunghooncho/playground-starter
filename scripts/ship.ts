@@ -93,9 +93,12 @@ async function main() {
   if (changed) console.log(`Not included (outside ${slug}):\n${changed}`)
 
   const p = project(link)
-  const viaGit = remote && gitConnected(p)
+  // A push to main is the deploy only when there is something new to push. Otherwise (first publish
+  // right after setup, or a redeploy after changing the password) upload the committed files.
+  let viaGit = false
   if (remote) {
     if (out("git", ["rev-list", "--count", "origin/main..HEAD"]) !== "0") {
+      viaGit = gitConnected(p)
       try {
         out("git", ["rebase", "--autostash", "origin/main"])
       } catch (e) {
@@ -104,8 +107,6 @@ async function main() {
       }
       run("git", ["push", "origin", "HEAD:main"])
       console.log("✓ pushed to GitHub")
-    } else if (viaGit) {
-      throw new Error("Nothing new to ship.")
     }
   }
 
